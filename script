@@ -1,0 +1,213 @@
+-- Configurações iniciais
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+local camera = workspace.CurrentCamera
+
+-- Criação da GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "Friti"
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+-- Frame da tabela
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 250, 0, 250)  -- Tamanho padrão para PC
+frame.Position = UDim2.new(0, 10, 0, 10)
+frame.BackgroundColor3 = Color3.fromRGB(70, 130, 180)  -- Azul moderado
+frame.BackgroundTransparency = 0.5
+frame.Parent = screenGui
+frame.Active = true -- Permite mover o frame
+frame.Draggable = true -- Permite arrastar a tabela pela tela
+
+-- Título da tabela
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, 0, 0, 30)
+titleLabel.Position = UDim2.new(0, 0, 0, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "Made by Friti exploit YT"
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)  -- Texto branco
+titleLabel.TextSize = 16
+titleLabel.TextStrokeTransparency = 0.8
+titleLabel.TextScaled = true
+titleLabel.Parent = frame
+
+-- Botão Noclip
+local noclipButton = Instance.new("TextButton")
+noclipButton.Size = UDim2.new(1, 0, 0, 50)
+noclipButton.Position = UDim2.new(0, 0, 0, 40)
+noclipButton.BackgroundColor3 = Color3.fromRGB(0, 255, 255)  -- Azul ciano
+noclipButton.TextColor3 = Color3.fromRGB(255, 255, 255)  -- Texto branco
+noclipButton.Text = "Noclip: Desativado"
+noclipButton.TextSize = 18
+noclipButton.TextStrokeTransparency = 0.8
+noclipButton.TextScaled = true
+noclipButton.Parent = frame
+
+-- Botão Fly
+local flyButton = Instance.new("TextButton")
+flyButton.Size = UDim2.new(1, 0, 0, 50)
+flyButton.Position = UDim2.new(0, 0, 0, 90)
+flyButton.BackgroundColor3 = Color3.fromRGB(0, 255, 255)  -- Azul ciano
+flyButton.TextColor3 = Color3.fromRGB(255, 255, 255)  -- Texto branco
+flyButton.Text = "Fly: Desativado"
+flyButton.TextSize = 18
+flyButton.TextStrokeTransparency = 0.8
+flyButton.TextScaled = true
+flyButton.Parent = frame
+
+-- Botão ESP
+local espButton = Instance.new("TextButton")
+espButton.Size = UDim2.new(1, 0, 0, 50)
+espButton.Position = UDim2.new(0, 0, 0, 140)
+espButton.BackgroundColor3 = Color3.fromRGB(0, 255, 255)  -- Azul ciano
+espButton.TextColor3 = Color3.fromRGB(255, 255, 255)  -- Texto branco
+espButton.Text = "ESP: Desativado"
+espButton.TextSize = 18
+espButton.TextStrokeTransparency = 0.8
+espButton.TextScaled = true
+espButton.Parent = frame
+
+-- Variáveis de controle
+local noclip = false
+local flying = false
+local bodyVelocity = nil
+local espEnabled = false
+local espObjects = {}
+
+-- Função para alternar o Noclip
+local function toggleNoclip()
+    noclip = not noclip
+    if noclip then
+        noclipButton.Text = "Noclip: Ativado"
+    else
+        noclipButton.Text = "Noclip: Desativado"
+    end
+end
+
+-- Função para alternar o Fly
+local function toggleFly()
+    flying = not flying
+    if flying then
+        flyButton.Text = "Fly: Ativado"
+        local humanoid = character:FindFirstChild("Humanoid")
+        local rootPart = humanoid.RootPart
+        local startHeight = rootPart.Position.Y
+
+        -- Voar por 4 segundos
+        bodyVelocity = Instance.new("BodyVelocity")
+        bodyVelocity.MaxForce = Vector3.new(400000, 400000, 400000)
+        bodyVelocity.Velocity = Vector3.new(0, 15, 0) -- Velocidade de 15 studs para voar
+        bodyVelocity.Parent = rootPart
+
+        -- Esperar 4 segundos e parar de voar
+        wait(4)
+        bodyVelocity:Destroy()
+        flying = false
+        flyButton.Text = "Fly: Desativado"
+    else
+        flyButton.Text = "Fly: Desativado"
+        if bodyVelocity then
+            bodyVelocity:Destroy()
+        end
+    end
+end
+
+-- Função para alternar o ESP
+local function toggleESP()
+    espEnabled = not espEnabled
+    if espEnabled then
+        espButton.Text = "ESP: Ativado"
+        -- Criar marcadores para todos os jogadores
+        for _, otherPlayer in pairs(game.Players:GetPlayers()) do
+            if otherPlayer ~= player then
+                local espPart = Instance.new("BillboardGui")
+                espPart.Size = UDim2.new(0, 100, 0, 50)
+                espPart.Adornee = otherPlayer.Character:FindFirstChild("Head")
+                espPart.Parent = screenGui
+
+                local textLabel = Instance.new("TextLabel")
+                textLabel.Size = UDim2.new(1, 0, 1, 0)
+                textLabel.Text = otherPlayer.Name
+                textLabel.BackgroundTransparency = 1
+                textLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+                textLabel.TextStrokeTransparency = 0.5
+                textLabel.TextScaled = true
+                textLabel.Parent = espPart
+
+                espObjects[otherPlayer] = espPart
+            end
+        end
+    else
+        espButton.Text = "ESP: Desativado"
+        -- Remover marcadores
+        for _, espPart in pairs(espObjects) do
+            espPart:Destroy()
+        end
+        espObjects = {}
+    end
+end
+
+-- Atualizar o estado de Noclip constantemente
+RunService.Stepped:Connect(function()
+    if noclip and character then
+        for _, part in pairs(character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    else
+        for _, part in pairs(character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = true
+            end
+        end
+    end
+
+    -- Atualizar ESP
+    if espEnabled then
+        for otherPlayer, espPart in pairs(espObjects) do
+            if otherPlayer.Character then
+                local head = otherPlayer.Character:FindFirstChild("Head")
+                if head then
+                    espPart.Adornee = head
+                end
+            end
+        end
+    end
+end)
+
+-- Lidar com a tecla F para ativar o Noclip (para PC)
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.F then
+        toggleNoclip()  -- Ativar o Noclip ao pressionar F
+    end
+end)
+
+-- Lidar com a tecla G para ativar o Fly (para PC)
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.G then
+        toggleFly()  -- Ativar o Fly ao pressionar G
+    end
+end)
+
+-- Lidar com a tecla H para ativar o ESP (para PC)
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.H then
+        toggleESP()  -- Ativar o ESP ao pressionar H
+    end
+end)
+
+-- Adaptar para dispositivos móveis
+if UserInputService.TouchEnabled then
+    -- Botões para celular funcionam como toques
+    noclipButton.MouseButton1Click:Connect(toggleNoclip)
+    flyButton.MouseButton1Click:Connect(toggleFly)
+    espButton.MouseButton1Click:Connect(toggleESP)
+
+    -- Reduzir o tamanho da tabela em dispositivos móveis
+    frame.Size = UDim2.new(0, 80, 0, 80)  -- 3x menor no celular
+end
