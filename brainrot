@@ -1,0 +1,157 @@
+-- Definindo referências principais
+local player = game.Players.LocalPlayer
+local character = player.Character or player.CharacterAdded:Wait()
+local UserInputService = game:GetService("UserInputService")
+local RunService = game:GetService("RunService")
+
+-- Criando a GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "Friti"
+screenGui.Parent = player:WaitForChild("PlayerGui")
+
+-- Frame principal
+local frame = Instance.new("Frame")
+frame.Size = UDim2.new(0, 250, 0, 250)
+frame.Position = UDim2.new(0, 10, 0, 10)
+frame.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+frame.BackgroundTransparency = 0.5
+frame.Parent = screenGui
+frame.Active = true -- Permite mover o frame
+
+-- Título da tabela
+local titleLabel = Instance.new("TextLabel")
+titleLabel.Size = UDim2.new(1, 0, 0, 30)
+titleLabel.Position = UDim2.new(0, 0, 0, 0)
+titleLabel.BackgroundTransparency = 1
+titleLabel.Text = "Made by Friti exploit YT"
+titleLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+titleLabel.TextSize = 16
+titleLabel.TextStrokeTransparency = 0.8
+titleLabel.TextScaled = true
+titleLabel.Parent = frame
+
+-- Botão Noclip
+local noclipButton = Instance.new("TextButton")
+noclipButton.Size = UDim2.new(1, 0, 0, 50)
+noclipButton.Position = UDim2.new(0, 0, 0, 40)
+noclipButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+noclipButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+noclipButton.Text = "Noclip: Desativado"
+noclipButton.TextSize = 18
+noclipButton.TextStrokeTransparency = 0.8
+noclipButton.TextScaled = true
+noclipButton.Parent = frame
+
+-- Botão Fly
+local flyButton = Instance.new("TextButton")
+flyButton.Size = UDim2.new(1, 0, 0, 50)
+flyButton.Position = UDim2.new(0, 0, 0, 90)
+flyButton.BackgroundColor3 = Color3.fromRGB(50, 50, 50)
+flyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+flyButton.Text = "Fly: Desativado"
+flyButton.TextSize = 18
+flyButton.TextStrokeTransparency = 0.8
+flyButton.TextScaled = true
+flyButton.Parent = frame
+
+-- Variáveis de controle
+local noclip = false
+local flying = false
+local bodyVelocity = nil
+
+-- Função para alternar o Noclip
+local function toggleNoclip()
+    noclip = not noclip
+    if noclip then
+        noclipButton.Text = "Noclip: Ativado"
+    else
+        noclipButton.Text = "Noclip: Desativado"
+    end
+end
+
+-- Função para alternar o Fly
+local function toggleFly()
+    flying = not flying
+    if flying then
+        flyButton.Text = "Fly: Ativado"
+        local humanoid = character:FindFirstChild("Humanoid")
+        local rootPart = humanoid.RootPart
+        local startHeight = rootPart.Position.Y
+
+        -- Voar por 4 segundos
+        bodyVelocity = Instance.new("BodyVelocity")
+        bodyVelocity.MaxForce = Vector3.new(400000, 400000, 400000)
+        bodyVelocity.Velocity = Vector3.new(0, 15, 0) -- Altura de 10 studs por segundo
+        bodyVelocity.Parent = rootPart
+
+        -- Esperar 4 segundos e parar de voar
+        wait(4)
+        bodyVelocity:Destroy()
+        flying = false
+        flyButton.Text = "Fly: Desativado"
+    else
+        flyButton.Text = "Fly: Desativado"
+        if bodyVelocity then
+            bodyVelocity:Destroy()
+        end
+    end
+end
+
+-- Atualizar o estado de Noclip constantemente
+RunService.Stepped:Connect(function()
+    if noclip and character then
+        for _, part in pairs(character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = false
+            end
+        end
+    else
+        for _, part in pairs(character:GetDescendants()) do
+            if part:IsA("BasePart") then
+                part.CanCollide = true
+            end
+        end
+    end
+end)
+
+-- Lidar com a tecla F para ativar o Noclip
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.F then
+        toggleNoclip()  -- Ativar o Noclip ao pressionar F
+    end
+end)
+
+-- Lidar com a tecla G para ativar o Fly
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.G then
+        toggleFly()  -- Ativar o Fly ao pressionar G
+    end
+end)
+
+-- Funcionalidade de mover o Frame
+local dragInput, dragStart, startPos
+
+frame.InputBegan:Connect(function(input)
+    if input.UserInputType == Enum.UserInputType.MouseButton1 then
+        dragStart = input.Position
+        startPos = frame.Position
+        dragInput = input
+        dragInput.Changed:Connect(function()
+            if dragInput.UserInputState == Enum.UserInputState.Change then
+                local delta = dragInput.Position - dragStart
+                frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+            end
+        end)
+    end
+end)
+
+-- Garantir que a tabela não desaparece ao morrer ou resetar
+player.CharacterAdded:Connect(function(char)
+    frame.Parent = screenGui  -- Recria a tabela quando o personagem renasce
+end)
+
+if player.Character then
+    frame.Parent = screenGui
+end
