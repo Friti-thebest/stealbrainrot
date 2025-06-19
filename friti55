@@ -6,12 +6,10 @@ local playerGui = player:WaitForChild("PlayerGui")
 
 -- Configurações iniciais
 local noclipEnabled = false
-local flyEnabled = false
 local espEnabled = false
-local flying = false
 local espParts = {}
 
--- Funções de ativação
+-- Função para ativar/desativar Noclip
 local function toggleNoclip()
     noclipEnabled = not noclipEnabled
     if noclipEnabled then
@@ -21,23 +19,7 @@ local function toggleNoclip()
     end
 end
 
-local function toggleFly()
-    flyEnabled = not flyEnabled
-    if flyEnabled then
-        flying = true
-        local humanoid = player.Character:FindFirstChild("Humanoid")
-        if humanoid then
-            humanoid.PlatformStand = true
-            humanoid:ChangeState(Enum.HumanoidStateType.Physics)
-            local flyHeight = player.Character.HumanoidRootPart.Position + Vector3.new(0, 10, 0)
-            game:GetService("TweenService"):Create(player.Character.PrimaryPart, TweenInfo.new(5), {Position = flyHeight}):Play()
-            wait(5)
-            flying = false
-            humanoid.PlatformStand = false
-        end
-    end
-end
-
+-- Função para ativar/desativar ESP
 local function toggleESP()
     espEnabled = not espEnabled
     for _, espPart in pairs(espParts) do
@@ -103,22 +85,10 @@ local function createUI()
 
     noclipButton.MouseButton1Click:Connect(toggleNoclip)
 
-    -- Botão Fly
-    local flyButton = Instance.new("TextButton")
-    flyButton.Size = UDim2.new(0, 180, 0, 30)
-    flyButton.Position = UDim2.new(0, 10, 0, 80)
-    flyButton.Text = "Fly"
-    flyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
-    flyButton.BackgroundColor3 = Color3.fromRGB(0, 255, 255)
-    flyButton.TextSize = 14
-    flyButton.Parent = background
-
-    flyButton.MouseButton1Click:Connect(toggleFly)
-
     -- Botão ESP
     local espButton = Instance.new("TextButton")
     espButton.Size = UDim2.new(0, 180, 0, 30)
-    espButton.Position = UDim2.new(0, 10, 0, 120)
+    espButton.Position = UDim2.new(0, 10, 0, 80)
     espButton.Text = "ESP"
     espButton.TextColor3 = Color3.fromRGB(255, 255, 255)
     espButton.BackgroundColor3 = Color3.fromRGB(0, 255, 255)
@@ -160,8 +130,6 @@ uis.InputBegan:Connect(function(input, gameProcessed)
 
     if input.KeyCode == Enum.KeyCode.F then
         toggleNoclip()
-    elseif input.KeyCode == Enum.KeyCode.G then
-        toggleFly()
     elseif input.KeyCode == Enum.KeyCode.H then
         toggleESP()
     end
@@ -173,9 +141,7 @@ uis.TouchTap:Connect(function(tap)
     if touchPos.Y < 150 then
         if touchPos.X < 200 then
             toggleNoclip()
-        elseif touchPos.X < 400 then
-            toggleFly()
-        elseif touchPos.X > 400 then
+        elseif touchPos.X > 200 and touchPos.X < 400 then
             toggleESP()
         end
     end
