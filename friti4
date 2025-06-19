@@ -1,0 +1,185 @@
+-- Referências
+local player = game.Players.LocalPlayer
+local mouse = player:GetMouse()
+local uis = game:GetService("UserInputService")
+local playerGui = player:WaitForChild("PlayerGui")
+
+-- Configurações iniciais
+local noclipEnabled = false
+local flyEnabled = false
+local espEnabled = false
+local flying = false
+local espParts = {}
+
+-- Funções de ativação
+local function toggleNoclip()
+    noclipEnabled = not noclipEnabled
+    if noclipEnabled then
+        player.Character.Humanoid.PlatformStand = true
+    else
+        player.Character.Humanoid.PlatformStand = false
+    end
+end
+
+local function toggleFly()
+    flyEnabled = not flyEnabled
+    if flyEnabled then
+        flying = true
+        local humanoid = player.Character:FindFirstChild("Humanoid")
+        if humanoid then
+            humanoid.PlatformStand = true
+            humanoid:ChangeState(Enum.HumanoidStateType.Physics)
+            local flyHeight = player.Character.HumanoidRootPart.Position + Vector3.new(0, 10, 0)
+            game:GetService("TweenService"):Create(player.Character.PrimaryPart, TweenInfo.new(5), {Position = flyHeight}):Play()
+            wait(5)
+            flying = false
+            humanoid.PlatformStand = false
+        end
+    end
+end
+
+local function toggleESP()
+    espEnabled = not espEnabled
+    for _, espPart in pairs(espParts) do
+        espPart:Destroy()
+    end
+    espParts = {}
+
+    if espEnabled then
+        for _, v in pairs(game.Players:GetPlayers()) do
+            if v ~= player then
+                local espPart = Instance.new("Part")
+                espPart.Size = Vector3.new(2, 2, 2)
+                espPart.Color = Color3.fromRGB(255, 0, 0)
+                espPart.Anchored = true
+                espPart.CanCollide = false
+                espPart.Transparency = 0.5
+                espPart.Parent = workspace
+                table.insert(espParts, espPart)
+                game:GetService("RunService").Heartbeat:Connect(function()
+                    if espEnabled then
+                        espPart.CFrame = v.Character.HumanoidRootPart.CFrame
+                    else
+                        espPart:Destroy()
+                    end
+                end)
+            end
+        end
+    end
+end
+
+-- Função para criar a interface gráfica
+local function createUI()
+    local screenGui = Instance.new("ScreenGui")
+    screenGui.Parent = playerGui
+
+    -- Tabela de fundo
+    local background = Instance.new("Frame")
+    background.Size = UDim2.new(0, 200, 0, 150)
+    background.Position = UDim2.new(0, 10, 0, 10)
+    background.BackgroundColor3 = Color3.fromRGB(50, 50, 255)
+    background.Parent = screenGui
+    background.Name = "FritiTable"
+
+    -- Título "Made by Friti exploit YT"
+    local title = Instance.new("TextLabel")
+    title.Size = UDim2.new(1, 0, 0, 30)
+    title.Position = UDim2.new(0, 0, 0, 0)
+    title.Text = "Made by Friti exploit YT"
+    title.TextColor3 = Color3.fromRGB(255, 255, 255)
+    title.BackgroundTransparency = 1
+    title.TextSize = 14
+    title.Parent = background
+
+    -- Botão Noclip
+    local noclipButton = Instance.new("TextButton")
+    noclipButton.Size = UDim2.new(0, 180, 0, 30)
+    noclipButton.Position = UDim2.new(0, 10, 0, 40)
+    noclipButton.Text = "Noclip"
+    noclipButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    noclipButton.BackgroundColor3 = Color3.fromRGB(0, 255, 255)
+    noclipButton.TextSize = 14
+    noclipButton.Parent = background
+
+    noclipButton.MouseButton1Click:Connect(toggleNoclip)
+
+    -- Botão Fly
+    local flyButton = Instance.new("TextButton")
+    flyButton.Size = UDim2.new(0, 180, 0, 30)
+    flyButton.Position = UDim2.new(0, 10, 0, 80)
+    flyButton.Text = "Fly"
+    flyButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    flyButton.BackgroundColor3 = Color3.fromRGB(0, 255, 255)
+    flyButton.TextSize = 14
+    flyButton.Parent = background
+
+    flyButton.MouseButton1Click:Connect(toggleFly)
+
+    -- Botão ESP
+    local espButton = Instance.new("TextButton")
+    espButton.Size = UDim2.new(0, 180, 0, 30)
+    espButton.Position = UDim2.new(0, 10, 0, 120)
+    espButton.Text = "ESP"
+    espButton.TextColor3 = Color3.fromRGB(255, 255, 255)
+    espButton.BackgroundColor3 = Color3.fromRGB(0, 255, 255)
+    espButton.TextSize = 14
+    espButton.Parent = background
+
+    espButton.MouseButton1Click:Connect(toggleESP)
+
+    -- Habilitar movimento da tabela
+    local dragging = false
+    local dragStart, startPos
+
+    background.InputBegan:Connect(function(input, isProcessed)
+        if isProcessed then return end
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = true
+            dragStart = input.Position
+            startPos = background.Position
+        end
+    end)
+
+    background.InputChanged:Connect(function(input)
+        if dragging and input.UserInputType == Enum.UserInputType.MouseMovement then
+            local delta = input.Position - dragStart
+            background.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
+        end
+    end)
+
+    background.InputEnded:Connect(function(input)
+        if input.UserInputType == Enum.UserInputType.MouseButton1 then
+            dragging = false
+        end
+    end)
+end
+
+-- Controle de teclas
+uis.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+
+    if input.KeyCode == Enum.KeyCode.F then
+        toggleNoclip()
+    elseif input.KeyCode == Enum.KeyCode.G then
+        toggleFly()
+    elseif input.KeyCode == Enum.KeyCode.H then
+        toggleESP()
+    end
+end)
+
+-- Detectar toque no celular
+uis.TouchTap:Connect(function(tap)
+    local touchPos = tap.Position
+    if touchPos.Y < 150 then
+        if touchPos.X < 200 then
+            toggleNoclip()
+        elseif touchPos.X < 400 then
+            toggleFly()
+        elseif touchPos.X > 400 then
+            toggleESP()
+        end
+    end
+end)
+
+-- Criar a interface
+createUI()
