@@ -1,17 +1,18 @@
--- Configuração inicial
+-- Configurações iniciais
 local player = game.Players.LocalPlayer
 local character = player.Character or player.CharacterAdded:Wait()
 local UserInputService = game:GetService("UserInputService")
 local RunService = game:GetService("RunService")
+local camera = workspace.CurrentCamera
 
--- Criando a GUI
+-- Criação da GUI
 local screenGui = Instance.new("ScreenGui")
 screenGui.Name = "Friti"
 screenGui.Parent = player:WaitForChild("PlayerGui")
 
--- Frame principal
+-- Frame da tabela
 local frame = Instance.new("Frame")
-frame.Size = UDim2.new(0, 250, 0, 250)  -- Tamanho padrão para desktop
+frame.Size = UDim2.new(0, 250, 0, 250)  -- Tamanho padrão para PC
 frame.Position = UDim2.new(0, 10, 0, 10)
 frame.BackgroundColor3 = Color3.fromRGB(70, 130, 180)  -- Azul moderado
 frame.BackgroundTransparency = 0.5
@@ -55,10 +56,24 @@ flyButton.TextStrokeTransparency = 0.8
 flyButton.TextScaled = true
 flyButton.Parent = frame
 
+-- Botão ESP
+local espButton = Instance.new("TextButton")
+espButton.Size = UDim2.new(1, 0, 0, 50)
+espButton.Position = UDim2.new(0, 0, 0, 140)
+espButton.BackgroundColor3 = Color3.fromRGB(0, 255, 255)  -- Azul ciano
+espButton.TextColor3 = Color3.fromRGB(255, 255, 255)  -- Texto branco
+espButton.Text = "ESP: Desativado"
+espButton.TextSize = 18
+espButton.TextStrokeTransparency = 0.8
+espButton.TextScaled = true
+espButton.Parent = frame
+
 -- Variáveis de controle
 local noclip = false
 local flying = false
 local bodyVelocity = nil
+local espEnabled = false
+local espObjects = {}
 
 -- Função para alternar o Noclip
 local function toggleNoclip()
@@ -98,6 +113,41 @@ local function toggleFly()
     end
 end
 
+-- Função para alternar o ESP
+local function toggleESP()
+    espEnabled = not espEnabled
+    if espEnabled then
+        espButton.Text = "ESP: Ativado"
+        -- Criar marcadores para todos os jogadores
+        for _, otherPlayer in pairs(game.Players:GetPlayers()) do
+            if otherPlayer ~= player then
+                local espPart = Instance.new("BillboardGui")
+                espPart.Size = UDim2.new(0, 100, 0, 50)
+                espPart.Adornee = otherPlayer.Character:FindFirstChild("Head")
+                espPart.Parent = screenGui
+
+                local textLabel = Instance.new("TextLabel")
+                textLabel.Size = UDim2.new(1, 0, 1, 0)
+                textLabel.Text = otherPlayer.Name
+                textLabel.BackgroundTransparency = 1
+                textLabel.TextColor3 = Color3.fromRGB(255, 0, 0)
+                textLabel.TextStrokeTransparency = 0.5
+                textLabel.TextScaled = true
+                textLabel.Parent = espPart
+
+                espObjects[otherPlayer] = espPart
+            end
+        end
+    else
+        espButton.Text = "ESP: Desativado"
+        -- Remover marcadores
+        for _, espPart in pairs(espObjects) do
+            espPart:Destroy()
+        end
+        espObjects = {}
+    end
+end
+
 -- Atualizar o estado de Noclip constantemente
 RunService.Stepped:Connect(function()
     if noclip and character then
@@ -110,6 +160,18 @@ RunService.Stepped:Connect(function()
         for _, part in pairs(character:GetDescendants()) do
             if part:IsA("BasePart") then
                 part.CanCollide = true
+            end
+        end
+    end
+
+    -- Atualizar ESP
+    if espEnabled then
+        for otherPlayer, espPart in pairs(espObjects) do
+            if otherPlayer.Character then
+                local head = otherPlayer.Character:FindFirstChild("Head")
+                if head then
+                    espPart.Adornee = head
+                end
             end
         end
     end
@@ -131,42 +193,19 @@ UserInputService.InputBegan:Connect(function(input, gameProcessed)
     end
 end)
 
--- Funcionalidade de mover o Frame
-local dragInput, dragStart, startPos
-
-frame.InputBegan:Connect(function(input)
-    if input.UserInputType == Enum.UserInputType.MouseButton1 then
-        dragStart = input.Position
-        startPos = frame.Position
-        dragInput = input
-        dragInput.Changed:Connect(function()
-            if dragInput.UserInputState == Enum.UserInputState.Change then
-                local delta = dragInput.Position - dragStart
-                frame.Position = UDim2.new(startPos.X.Scale, startPos.X.Offset + delta.X, startPos.Y.Scale, startPos.Y.Offset + delta.Y)
-            end
-        end)
+-- Lidar com a tecla H para ativar o ESP (para PC)
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+    if input.KeyCode == Enum.KeyCode.H then
+        toggleESP()  -- Ativar o ESP ao pressionar H
     end
 end)
 
--- Interação de Toque (para dispositivos móveis)
-noclipButton.MouseButton1Click:Connect(function()
-    toggleNoclip()  -- Alternar Noclip com o toque
-end)
-
-flyButton.MouseButton1Click:Connect(function()
-    toggleFly()  -- Alternar Fly com o toque
-end)
-
--- Garantir que a tabela não desaparece ao morrer ou resetar
-player.CharacterAdded:Connect(function(char)
-    frame.Parent = screenGui  -- Recria a tabela quando o personagem renasce
-end)
-
-if player.Character then
-    frame.Parent = screenGui
-end
-
--- Adaptar o tamanho da tabela para dispositivos móveis (3 vezes menor no celular)
+-- Adaptar para dispositivos móveis (toque)
 if UserInputService.TouchEnabled then
     frame.Size = UDim2.new(0, 83, 0, 83)  -- Tabela 3 vezes menor no celular
+
+    noclipButton.TextButton.MouseButton1Click:Connect(toggleNoclip)
+    flyButton.TextButton.MouseButton1Click:Connect(toggleFly)
+    espButton.TextButton.MouseButton1Click:Connect(toggleESP)
 end
