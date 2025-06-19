@@ -68,10 +68,10 @@ espButton.TextStrokeTransparency = 0.8
 espButton.TextScaled = true
 espButton.Parent = frame
 
--- Botão ShiftLock no canto inferior direito
+-- Botão ShiftLock no canto inferior esquerdo
 local shiftLockButton = Instance.new("TextButton")
 shiftLockButton.Size = UDim2.new(0, 60, 0, 60)
-shiftLockButton.Position = UDim2.new(1, -70, 1, -70)
+shiftLockButton.Position = UDim2.new(0, 10, 1, -70)
 shiftLockButton.BackgroundColor3 = Color3.fromRGB(255, 255, 255)  -- Branco
 shiftLockButton.TextColor3 = Color3.fromRGB(0, 0, 0)  -- Texto preto
 shiftLockButton.Text = "ShiftLock"
@@ -167,13 +167,11 @@ local function toggleShiftLock()
     if shiftLockEnabled then
         shiftLockButton.Text = "ShiftLock: Ativado"
         -- Habilitar ShiftLock
-        UserInputService.MouseIconEnabled = false
         camera.CameraType = Enum.CameraType.Scriptable
         camera.CFrame = character:WaitForChild("HumanoidRootPart").CFrame
     else
         shiftLockButton.Text = "ShiftLock: Desativado"
         -- Desabilitar ShiftLock
-        UserInputService.MouseIconEnabled = true
         camera.CameraType = Enum.CameraType.Custom
     end
 end
@@ -196,3 +194,12 @@ noclipButton.MouseButton1Click:Connect(toggleNoclip)
 flyButton.MouseButton1Click:Connect(toggleFly)
 espButton.MouseButton1Click:Connect(toggleESP)
 shiftLockButton.MouseButton1Click:Connect(toggleShiftLock)
+
+-- Ajuste da tabela para dispositivos móveis
+if UserInputService.TouchEnabled then
+    frame.Size = UDim2.new(0, 80, 0, 80) -- Tamanho da tabela em dispositivos móveis
+    titleLabel.TextSize = 12
+    noclipButton.TextSize = 10
+    flyButton.TextSize = 10
+    espButton.TextSize = 10
+end
